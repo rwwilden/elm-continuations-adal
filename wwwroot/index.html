@@ -1,0 +1,31 @@
+<html>
+
+<head>
+
+</head>
+
+<body>
+    <div id="main"></div>
+    <script src="js/main.js"></script>
+    <script>
+        var node = document.getElementById('main');
+        var app = Elm.Main.embed(node);
+
+        // https://stackoverflow.com/a/2117523/23562
+        function uuidv4() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // Subscribe to acquire token requests from Elm and send acquired token back to Elm.
+        app.ports['acquireToken'].subscribe(continuationKey => {
+            // Acquire access token (for now a random GUID).
+            const accessToken = uuidv4();
+            app.ports["tokens"].send({ token: accessToken, continuationKey: continuationKey });
+        });
+    </script>
+</body>
+
+</html>
