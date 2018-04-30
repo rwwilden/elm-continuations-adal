@@ -15,6 +15,7 @@ type alias Model =
     { acquireTokenContinuations: Dict.Dict ContinuationKey (JwtToken -> Cmd Msg)
     , continuationKey: ContinuationKey
     , latestToken: JwtToken
+    , answer: Int
     }
 
 init : ( Model, Cmd Msg )
@@ -22,6 +23,7 @@ init
     = ( { acquireTokenContinuations = Dict.empty
         , continuationKey = 0
         , latestToken = ""
+        , answer = 0
       }
     , Cmd.none )
 
@@ -51,8 +53,11 @@ type Msg
 -- VIEW
 view : Model -> Html Msg
 view model =
-    div [] [
-        button [ onClick ButtonClicked ] [ text "Do it!" ]
+    div []
+    [ div []
+        [ text "What's the answer to life, the universe and everything? "
+        , text (toString model.answer) ]
+    , button [ onClick ButtonClicked ] [ text "Get answer" ]
     ]
 
 
@@ -70,15 +75,26 @@ update msg model =
         ButtonClicked ->
             let
                 continuationKey = model.continuationKey + 1
-
+                continuation = randomRoll 42 42
+                acquireTokenContinuations = Dict.insert continuationKey continuation model.acquireTokenContinuations
             in
                 ( { model
-                    | continuationKey = continuationKey }
+                    | continuationKey = continuationKey
+                    , acquireTokenContinuations = acquireTokenContinuations }
                 , acquireToken continuationKey )
         TokenAcquired (Err err) ->
             ( model, Cmd.none )
         TokenAcquired (Ok token) ->
-            ( { model | latestToken = token.token }, Cmd.none )
+            let
+                continuationKey = token.continuationKey
+                continuation = Dict.get continuationKey model.acquireTokenContinuations
+                continuationResult = case continuation of
+                    Nothing -> Cmd.none
+                    Just c -> c token.token
+            in
+                ( { model | latestToken = token.token }, continuationResult )
+        RandomResult answer ->
+            ( { model | answer = answer }, Cmd.none )
 
 
 
